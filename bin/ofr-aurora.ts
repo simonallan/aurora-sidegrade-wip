@@ -1,21 +1,37 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { OfrAuroraStack } from '../lib/ofr-aurora-stack';
+import "source-map-support/register";
+import * as cdk from "aws-cdk-lib";
+import { OfrAuroraStack } from "../lib/ofr-aurora-stack";
+import { LandingZoneAccountType } from "../lib/network";
+
+const environments: LandingZoneAccountType[] = [
+  LandingZoneAccountType.DEV,
+  LandingZoneAccountType.INT,
+  LandingZoneAccountType.PROD,
+];
 
 const app = new cdk.App();
-new OfrAuroraStack(app, 'OfrAuroraStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const env = {
+  account: "651948078005",
+  region: "eu-west-2",
+};
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
-
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+environments.forEach((landingZoneAccountType: LandingZoneAccountType) => {
+  new OfrAuroraStack(app, `ofr-aurora-stack-${landingZoneAccountType}`, {
+    env,
+    description: "Online Fundraising :: Admin :: Application",
+    landingZoneAccountType,
+    terminationProtection: true,
+    commitId: process.env.COMMIT_ID,
+    tags: {
+      "Cost-Centre": "TC7003",
+      "Sub-Project-Code": "SO00002-0000",
+      Product: "Online Fundraising",
+      Environment: landingZoneAccountType,
+      "Support-Level": "2",
+      Name: `Stack: ofr-admin-application-${landingZoneAccountType}`,
+      id: `ofr-admin-application-${landingZoneAccountType}`,
+    },
+  });
 });
