@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { OfrAuroraStack } from "../lib/ofr-aurora-stack";
+import { AuroraStack } from "../lib/ofr-aurora-stack";
 import { LandingZoneAccountType } from "../lib/network";
 
 const environments: LandingZoneAccountType[] = [
@@ -18,9 +18,9 @@ const env = {
 };
 
 environments.forEach((landingZoneAccountType: LandingZoneAccountType) => {
-  new OfrAuroraStack(app, `ofr-aurora-stack-${landingZoneAccountType}`, {
+  new AuroraStack(app, `aurora-stack-${landingZoneAccountType}`, {
     env,
-    description: "Online Fundraising :: Admin :: Application",
+    description: "Aurora :: WIP :: DB Sidegrade",
     landingZoneAccountType,
     terminationProtection: true,
     commitId: process.env.COMMIT_ID,

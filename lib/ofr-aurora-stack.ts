@@ -15,13 +15,13 @@ import {
 import { InstanceType, InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
 import { Credentials } from "aws-cdk-lib/aws-rds";
 
-export interface OfrAuroraStackProps extends StackProps {
+export interface AuroraStackProps extends StackProps {
   readonly landingZoneAccountType: LandingZoneAccountType;
   readonly commitId?: string;
 }
 
-export class OfrAuroraStack extends Stack {
-  constructor(scope: Construct, id: string, props: OfrAuroraStackProps) {
+export class AuroraStack extends Stack {
+  constructor(scope: Construct, id: string, props: AuroraStackProps) {
     super(scope, id, props);
 
     // `getVpcSubnets()` must only be called once per subnet type
@@ -34,7 +34,7 @@ export class OfrAuroraStack extends Stack {
 
     // Database
     const databasePasswordSecret = new Secret(this, `${id}-database-password`, {
-      description: `OFR Aurora :: WIP :: ${props.landingZoneAccountType} :: Database password`,
+      description: `Aurora :: WIP :: ${props.landingZoneAccountType} :: Database password`,
       generateSecretString: {
         excludePunctuation: true,
         excludeCharacters: `!@#$%^&*/"`,
@@ -52,7 +52,7 @@ export class OfrAuroraStack extends Stack {
         subnets: isolatedSubnets,
       },
       credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
-      defaultDatabaseName: "cruk_fundraising",
+      defaultDatabaseName: "aurora-wip",
       removalPolicy: props.landingZoneAccountType === "integration" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       backupRetention: Duration.days(3),
       scaling: {
