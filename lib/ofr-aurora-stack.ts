@@ -42,25 +42,30 @@ export class AuroraStack extends Stack {
         passwordLength: 32,
       },
     });
-    const database = new ServerlessCluster(this, `${id}-aurora-serverless`, {
-      clusterIdentifier: `${id}-aurora-serverless`,
-      engine: DatabaseClusterEngine.auroraMysql({
-        version: AuroraMysqlEngineVersion.VER_2_11_4,
-      }),
-      vpc,
-      vpcSubnets: {
-        subnets: isolatedSubnets,
-      },
-      credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
-      defaultDatabaseName: "aurora-wip",
-      removalPolicy: props.landingZoneAccountType === "integration" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
-      backupRetention: Duration.days(3),
-      scaling: {
-        minCapacity: AuroraCapacityUnit.ACU_1,
-        maxCapacity: AuroraCapacityUnit.ACU_2,
-        autoPause: Duration.minutes(60),
-      },
-    });
+
+    /**
+     * Let's try a serverless cluster from SnapShot, same settings as below:
+     */
+
+    // const database = new ServerlessCluster(this, `${id}-aurora-serverless`, {
+    //   clusterIdentifier: `${id}-aurora-serverless`,
+    //   engine: DatabaseClusterEngine.auroraMysql({
+    //     version: AuroraMysqlEngineVersion.VER_2_11_4,
+    //   }),
+    //   vpc,
+    //   vpcSubnets: {
+    //     subnets: isolatedSubnets,
+    //   },
+    //   credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
+    //   defaultDatabaseName: "aurora-wip",
+    //   removalPolicy: props.landingZoneAccountType === "integration" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    //   backupRetention: Duration.days(3),
+    //   scaling: {
+    //     minCapacity: AuroraCapacityUnit.ACU_1,
+    //     maxCapacity: AuroraCapacityUnit.ACU_2,
+    //     autoPause: Duration.minutes(60),
+    //   },
+    // });
 
     // // New DB Aurora MySQL provisioned instance as Aurora Serverless V1 is going EoL
     const databaseInstance = new DatabaseCluster(this, `${id}-aurora-provisioned`, {
@@ -82,10 +87,6 @@ export class AuroraStack extends Stack {
         retention: props.landingZoneAccountType === LandingZoneAccountType.PROD ? Duration.days(30) : Duration.days(1),
         preferredWindow: "04:30-05:00",
       },
-    });
-
-    new CfnOutput(this, `${id} Aurora-Serverless Endpoint`, {
-      value: database.clusterEndpoint.hostname,
     });
 
     new CfnOutput(this, `${id} Aurora-Provisioned Endpoint`, {
