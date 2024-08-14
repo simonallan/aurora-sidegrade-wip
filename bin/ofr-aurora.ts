@@ -18,7 +18,7 @@ const env = {
 };
 
 environments.forEach((landingZoneAccountType: LandingZoneAccountType) => {
-  new AuroraStack(app, `aurora-stack-${landingZoneAccountType}`, {
+  const auroraStack = new AuroraStack(app, `aurora-stack-${landingZoneAccountType}`, {
     env,
     description: "Aurora :: WIP :: DB Sidegrade",
     landingZoneAccountType,
