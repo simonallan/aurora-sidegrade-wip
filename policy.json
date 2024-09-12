@@ -1,0 +1,53 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::ofr-admin-pipeline-produ-ofradminpipelineproducti-37hdxhl1soj6",
+        "arn:aws:s3:::ofr-admin-pipeline-produ-ofradminpipelineproducti-37hdxhl1soj6/*"
+      ],
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
+        }
+      }
+    },
+    {
+      "Sid": "RetainBucketOnDeletion",
+      "Action": ["s3:DeleteBucket"],
+      "Effect": "Deny",
+      "Resource": "arn:aws:s3:::ofr-admin-pipeline-produ-ofradminpipelineproducti-37hdxhl1soj6",
+      "Principal": {
+        "AWS": ["*"]
+      }
+    }
+  ]
+}
+
+// ORIGINAL POLICY
+// {
+// 	"Version": "2012-10-17",
+// 	"Statement": [
+// 		{
+// 			"Effect": "Deny",
+// 			"Principal": {
+// 				"AWS": "*"
+// 			},
+// 			"Action": "s3:*",
+// 			"Resource": [
+// 				"arn:aws:s3:::ofr-admin-pipeline-integ-ofradminpipelineintegrat-1rhqi6xxrgksr",
+// 				"arn:aws:s3:::ofr-admin-pipeline-integ-ofradminpipelineintegrat-1rhqi6xxrgksr/*"
+// 			],
+// 			"Condition": {
+// 				"Bool": {
+// 					"aws:SecureTransport": "false"
+// 				}
+// 			}
+// 		}
+// 	]
+// }
