@@ -1,11 +1,4 @@
-import {
-  Stack,
-  StackProps,
-  Duration,
-  RemovalPolicy,
-  CfnOutput,
-  Tags,
-} from "aws-cdk-lib";
+import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput, Tags } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { getVpcId, getVpcSubnets, LandingZoneAccountType } from "./network";
 import { Vpc, SubnetType } from "aws-cdk-lib/aws-ec2";
@@ -16,6 +9,7 @@ import {
   DatabaseClusterEngine,
   ClusterInstance,
   CaCertificate,
+  ServerlessClusterFromSnapshot,
 } from "aws-cdk-lib/aws-rds";
 import { InstanceType, InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
 import { Credentials } from "aws-cdk-lib/aws-rds";
@@ -47,19 +41,15 @@ export class AuroraStack extends Stack {
     });
 
     // Database
-    const databasePasswordSecret = new Secret(
-      this,
-      `${id}-wip-database-password`,
-      {
-        description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
-        generateSecretString: {
-          excludePunctuation: true,
-          excludeCharacters: `!@#$%^&*/"`,
-          includeSpace: false,
-          passwordLength: 32,
-        },
-      }
-    );
+    const databasePasswordSecret = new Secret(this, `${id}-wip-database-password`, {
+      description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
+      generateSecretString: {
+        excludePunctuation: true,
+        excludeCharacters: `!@#$%^&*/"`,
+        includeSpace: false,
+        passwordLength: 32,
+      },
+    });
 
     /**
      * Let's try a serverless cluster from SnapShot, same settings as below:
@@ -85,43 +75,50 @@ export class AuroraStack extends Stack {
     //   },
     // });
 
-    // New DB Aurora MySQL provisioned instance as Aurora Serverless V1 is going EoL
-    const databaseInstance = new DatabaseCluster(
-      this,
-      `${id}-provisioned-db-cluster`,
-      {
-        clusterIdentifier: `${id}-cluster`,
-        engine: DatabaseClusterEngine.auroraMysql({
-          version: AuroraMysqlEngineVersion.VER_2_11_4,
-        }),
-        writer: ClusterInstance.provisioned(`${id}-writer`, {
-          caCertificate: CaCertificate.RDS_CA_RSA2048_G1,
-          instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.SMALL),
-        }),
-        credentials: Credentials.fromPassword(
-          "drupal",
-          databasePasswordSecret.secretValue
-        ),
-        vpc,
-        vpcSubnets: {
-          subnets: isolatedSubnets,
-        },
-        removalPolicy:
-          props.landingZoneAccountType === LandingZoneAccountType.PROD
-            ? RemovalPolicy.RETAIN
-            : RemovalPolicy.DESTROY,
-        backup: {
-          retention:
-            props.landingZoneAccountType === LandingZoneAccountType.PROD
-              ? Duration.days(30)
-              : Duration.days(1),
-          preferredWindow: "04:30-05:00",
-        },
-      }
-    );
+    const databaseFromSnapshot = new ServerlessClusterFromSnapshot(this, `${id}-snapshot-db`, {
+      clusterIdentifier: `${id}-serverless-snapshot-db`,
+      engine: DatabaseClusterEngine.AURORA_MYSQL, // version: AuroraMysqlEngineVersion.VER_2_11_4
+      snapshotIdentifier:
+        "arn:aws:rds:eu-west-2:651948078005:cluster-snapshot:ofr-admin-sandbox-20240918",
+      vpc: vpc,
+      vpcSubnets: { subnets: isolatedSubnets },
+    });
 
-    new CfnOutput(this, `${id} Aurora-Provisioned Endpoint`, {
+    // New DB Aurora MySQL provisioned instance as Aurora Serverless V1 is going EoL
+    const databaseInstance = new DatabaseCluster(this, `${id}-provisioned-db`, {
+      clusterIdentifier: `${id}-provisioned-cluster`,
+      engine: DatabaseClusterEngine.auroraMysql({
+        version: AuroraMysqlEngineVersion.VER_2_11_4,
+      }),
+      writer: ClusterInstance.provisioned(`${id}-writer`, {
+        instanceIdentifier: `${id}-writer`,
+        caCertificate: CaCertificate.RDS_CA_RSA2048_G1,
+        instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.SMALL),
+      }),
+      credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
+      vpc,
+      vpcSubnets: {
+        subnets: isolatedSubnets,
+      },
+      removalPolicy:
+        props.landingZoneAccountType === LandingZoneAccountType.PROD
+          ? RemovalPolicy.RETAIN
+          : RemovalPolicy.DESTROY,
+      backup: {
+        retention:
+          props.landingZoneAccountType === LandingZoneAccountType.PROD
+            ? Duration.days(30)
+            : Duration.days(1),
+        preferredWindow: "04:30-05:00",
+      },
+    });
+
+    new CfnOutput(this, `${id} Aurora-Provisioned new instance Endpoint`, {
       value: databaseInstance.clusterEndpoint.hostname,
+    });
+
+    new CfnOutput(this, `${id} Aurora-Serverless from snapshot Endpoint`, {
+      value: databaseFromSnapshot.clusterEndpoint.hostname,
     });
   }
 }

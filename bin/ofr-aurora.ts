@@ -1,63 +1,49 @@
 #!/usr/bin/env node
 import "source-map-support/register";
-import { App, Aws } from "aws-cdk-lib";
+import { App, Aws, Stack, StackProps } from "aws-cdk-lib";
 import { AuroraStack } from "../lib/ofr-aurora-stack";
-import {
-  LandingZoneAccountType,
-  // DEVELOPMENT_ENVIRONMENT_NAME,
-  // INTEGRATION_ENVIRONMENT_NAME,
-} from "../lib/network";
+import { LandingZoneAccountType } from "../lib/network";
+import { Construct } from "constructs";
 
-const environments: LandingZoneAccountType[] = [
-  LandingZoneAccountType.INT,
-  // LandingZoneAccountType.PROD, // Disable that shiz
-];
+// const environments: LandingZoneAccountType[] = [
+//   LandingZoneAccountType.DEV,
+//   // LandingZoneAccountType.PROD, // Disable that
+// ];
+
+const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.DEV;
 
 const app = new App();
 
 const env = {
-  account:
-    process.env.CDK_DEPLOY_ACCOUNT ||
-    process.env.CDK_DEFAULT_ACCOUNT ||
-    Aws.ACCOUNT_ID,
+  account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT || Aws.ACCOUNT_ID,
   region: "eu-west-2",
 };
 
-// No Prod deploys
+// Only Int, no Prod.
 if (!["651948078005"].includes(env.account)) {
   throw new Error(
-    'Please ensure this script is being used with the following AWS account: "651948078005": Integration'
+    'Please ensure this script is being used with the following AWS account: "651948078005"'
   );
 }
 
-// if (
-//   process.env.ENVIRONMENT_NAME !== "development" &&
-//   process.env.ENVIRONMENT_NAME !== "integration"
-// )
-//   throw new Error(
-//     "Environment variable ENVIRONMENT_NAME must be defined. Please use `export ENVIRONMENT_NAME=(development/integration)`"
-//   );
-// const environment: string = process.env.ENVIRONMENT_NAME;
+const auroraProps = {
+  description: "Aurora :: WIP :: DB Sidegrade",
+  env,
+  landingZoneAccountType,
+  terminationProtection: false,
+  tags: {
+    Product: "Online Fundraising",
+    Environment: landingZoneAccountType,
+    "Cost-Centre": "TC7003",
+    "Sub-Project-Code": "SO00002-0000",
+    "Support-Level": "0",
+    Name: `Stack: aurora-sandbox-${landingZoneAccountType}`,
+    id: `aurora--sandbox-${landingZoneAccountType}`,
+  },
+};
 
-environments.forEach((landingZoneAccountType: LandingZoneAccountType) => {
-  const auroraStack = new AuroraStack(
-    app,
-    `poc-aurora-${landingZoneAccountType}`,
-    {
-      description: "Aurora :: WIP :: DB Sidegrade",
-      env,
-      landingZoneAccountType,
-      // environment,
-      terminationProtection: true,
-      tags: {
-        Product: "Online Fundraising",
-        Environment: landingZoneAccountType,
-        "Cost-Centre": "TC7003",
-        "Sub-Project-Code": "SO00002-0000",
-        "Support-Level": "0",
-        Name: `Stack: poc-aurora-${landingZoneAccountType}`,
-        id: `poc-aurora-${landingZoneAccountType}`,
-      },
-    }
-  );
-});
+// environments.forEach((landingZoneAccountType: LandingZoneAccountType) => {
+// const auroraStack = new AuroraStack(app, `aurora-${landingZoneAccountType}`, {
+// });
+
+new AuroraStack(app, "of-aurora-sandbox", auroraProps);

@@ -10,9 +10,7 @@ import { ISubnet, Subnet, SubnetType } from "aws-cdk-lib/aws-ec2";
  *
  * @param landingZoneAccountType
  */
-export const getVpcId = (
-  landingZoneAccountType: LandingZoneAccountType
-): string => {
+export const getVpcId = (landingZoneAccountType: LandingZoneAccountType): string => {
   return landingZoneAccountType === LandingZoneAccountType.PROD
     ? "vpc-09d085203fb33443c"
     : "vpc-0ed78d1d0d9b9015e";
@@ -31,44 +29,20 @@ export const getVpcSubnetIds = (
   if (landingZoneAccountType === LandingZoneAccountType.PROD) {
     switch (subnetType) {
       case SubnetType.PRIVATE_ISOLATED:
-        return [
-          "subnet-0127a3f87148a6ffb",
-          "subnet-06e9a77bc14119049",
-          "subnet-0348348a7fd409b22",
-        ];
+        return ["subnet-0127a3f87148a6ffb", "subnet-06e9a77bc14119049", "subnet-0348348a7fd409b22"];
       case SubnetType.PRIVATE_WITH_EGRESS:
-        return [
-          "subnet-0db22575f00e3afba",
-          "subnet-074ae8b99aa890b73",
-          "subnet-0cd7853a189a25b3e",
-        ];
+        return ["subnet-0db22575f00e3afba", "subnet-074ae8b99aa890b73", "subnet-0cd7853a189a25b3e"];
       case SubnetType.PUBLIC:
-        return [
-          "subnet-087955f9693c1b027",
-          "subnet-09fa749ff66ebd9e5",
-          "subnet-0f9820e03b2671900",
-        ];
+        return ["subnet-087955f9693c1b027", "subnet-09fa749ff66ebd9e5", "subnet-0f9820e03b2671900"];
     }
   }
   switch (subnetType) {
     case SubnetType.PRIVATE_ISOLATED:
-      return [
-        "subnet-09ed352d9d898e0df",
-        "subnet-06fe1cd03cc58c16e",
-        "subnet-0d1b561775e6d9ca0",
-      ];
+      return ["subnet-09ed352d9d898e0df", "subnet-06fe1cd03cc58c16e", "subnet-0d1b561775e6d9ca0"];
     case SubnetType.PRIVATE_WITH_EGRESS:
-      return [
-        "subnet-05516e70e29d6b66a",
-        "subnet-00c176d9edad2e786",
-        "subnet-0735a5fdfd3e5e54e",
-      ];
+      return ["subnet-05516e70e29d6b66a", "subnet-00c176d9edad2e786", "subnet-0735a5fdfd3e5e54e"];
     case SubnetType.PUBLIC:
-      return [
-        "subnet-0133a1b6a752f6d33",
-        "subnet-0163e0360a91727b5",
-        "subnet-0cf378548f5ab6b3c",
-      ];
+      return ["subnet-0133a1b6a752f6d33", "subnet-0163e0360a91727b5", "subnet-0cf378548f5ab6b3c"];
   }
 
   return [];
@@ -92,13 +66,9 @@ export const getVpcSubnets = (
   landingZoneAccountType?: LandingZoneAccountType
 ): ISubnet[] => {
   const subnets: ISubnet[] = [];
-  getVpcSubnetIds(subnetType, landingZoneAccountType).forEach(
-    (subnetId: string) => {
-      subnets.push(
-        Subnet.fromSubnetId(scope, `${id}-subnet-${subnetId}`, subnetId)
-      );
-    }
-  );
+  getVpcSubnetIds(subnetType, landingZoneAccountType).forEach((subnetId: string) => {
+    subnets.push(Subnet.fromSubnetId(scope, `${id}-subnet-${subnetId}`, subnetId));
+  });
 
   return subnets;
 };
@@ -162,8 +132,9 @@ export const sshToJumpBoxHosts: IpsAndDescriptions = {
  * SubnetType for requesting an array of subnets for specific purposes.
  */
 export enum LandingZoneAccountType {
-  INT = "int",
-  PROD = "prod",
+  DEV = "sandbox",
+  INT = "integration",
+  PROD = "production",
 }
 
 /**
