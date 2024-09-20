@@ -1,4 +1,4 @@
-name: Check AWS CDK Application
+name: cdk-test-check
 
 on:
   push:
