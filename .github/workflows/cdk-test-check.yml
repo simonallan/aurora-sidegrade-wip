@@ -1,7 +1,7 @@
 name: cdk-test-check
 
 on:
-  push:
+  pull_request:
     branches: [main]
     paths-ignore:
       - "**/README.md"
@@ -12,3 +12,14 @@ jobs:
     steps:
       - run: |
           echo "H3llo Werld"
+  formatting:
+    name: formatting check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: Install Node Dependencies
+        run: npm ci
+      - name: Run Prettier Check
+        run: npm run prettier
