@@ -12,8 +12,8 @@ jobs:
     steps:
       - run: |
           echo "H3llo Werld"
-  formatting:
-    name: formatting check
+  prettier:
+    name: Formatting check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,3 +23,25 @@ jobs:
         run: npm ci
       - name: Run Prettier Check
         run: npm run prettier
+  eslint:
+    name: Eslint check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: install node-dependencies
+        run: npm ci
+      - name: Run eslint check
+        run: npm run eslint-check
+  build:
+    name: Synthesize CDK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/Checkout@v4
+      - uses: actions/setup-node@v4
+      - name: Install node dependencies
+        run: npm ci
+      - name: Synthesize CDK
+        run: npm run build

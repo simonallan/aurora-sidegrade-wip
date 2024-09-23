@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import "source-map-support/register";
-import { App, Aws, Stack, StackProps } from "aws-cdk-lib";
+import { App, Aws } from "aws-cdk-lib";
 import { AuroraStack } from "../lib/ofr-aurora-stack";
 import { LandingZoneAccountType } from "../lib/network";
-import { Construct } from "constructs";
 
 // const environments: LandingZoneAccountType[] = [
 //   LandingZoneAccountType.DEV,
