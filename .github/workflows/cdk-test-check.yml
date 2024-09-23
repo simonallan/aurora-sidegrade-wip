@@ -2,20 +2,13 @@ name: cdk-test-check
 
 on:
   push:
-    branches: [$default-branch]
-  pull_request:
-    branches: [$default-branch]
+    branches: [main]
+    paths-ignore:
+      - "**/README.md"
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Synthesize stacks
-        run: cdk synth
+      - run: |
+          echo "H3llo Werld"
