@@ -36,8 +36,8 @@ const auroraProps = {
     "Cost-Centre": "TC7003",
     "Sub-Project-Code": "SO00002-0000",
     "Support-Level": "0",
-    Name: `Stack: aurora-sandbox-${landingZoneAccountType}`,
-    id: `aurora--sandbox-${landingZoneAccountType}`,
+    Name: `Stack: ofr-aurora-${landingZoneAccountType}`,
+    id: `ofr-aurora-${landingZoneAccountType}`,
   },
 };
 
@@ -45,4 +45,4 @@ const auroraProps = {
 // const auroraStack = new AuroraStack(app, `aurora-${landingZoneAccountType}`, {
 // });
 
-new AuroraStack(app, "of-aurora-sandbox", auroraProps);
+new AuroraStack(app, `of-aurora-${landingZoneAccountType}`, auroraProps);

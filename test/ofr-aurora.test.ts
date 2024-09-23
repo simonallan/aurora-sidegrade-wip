@@ -1,17 +1,39 @@
-// import * as cdk from 'aws-cdk-lib';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as OfrAurora from '../lib/ofr-aurora-stack';
+import { App } from "aws-cdk-lib";
+import { Template } from "aws-cdk-lib/assertions";
+import { AuroraStack } from "../lib/ofr-aurora-stack";
+import { LandingZoneAccountType } from "../lib/network";
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/ofr-aurora-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new OfrAurora.OfrAuroraStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+const env = {
+  account: "111122223333",
+  region: "eu-west-0",
+};
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.DEV;
+
+const mockAuroraProps = {
+  description: "Aurora :: WIP :: DB Sidegrade",
+  env,
+  landingZoneAccountType,
+  terminationProtection: false,
+  tags: {
+    Product: "Online Fundraising",
+    Environment: landingZoneAccountType,
+    "Cost-Centre": "TC7003",
+    "Sub-Project-Code": "SO00002-0000",
+    "Support-Level": "0",
+    Name: `Stack: ofr-aurora-${landingZoneAccountType}`,
+    id: `ofr-aurora-${landingZoneAccountType}`,
+  },
+};
+
+// WHEN
+test("CDK stacks synthesized successfully", () => {
+  // GIVEN
+  const app = new App();
+
+  const mockStack = new AuroraStack(app, "mock-aurora-sandbox-stack", mockAuroraProps);
+
+  // THEN
+  const template = Template.fromStack(mockStack);
+  expect(template).toBeTruthy();
 });
