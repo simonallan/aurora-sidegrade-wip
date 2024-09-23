@@ -3,6 +3,8 @@
 This is a WIP repo for looking into various ways to migrate an AWS Aurora Serverless v1 Cluster to
 another database or database server.
 
+A trivial Change
+
 ## Useful commands
 
 - `npm run build` compile typescript to js
