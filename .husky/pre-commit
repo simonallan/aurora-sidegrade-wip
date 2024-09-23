@@ -1,5 +1,5 @@
 npm test
 npm run prettier
 npm run eslint-check
-npm run build
+npm run cdkbuild
 
