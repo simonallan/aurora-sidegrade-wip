@@ -37,4 +37,4 @@ jobs:
       - name: Install node dependencies
         run: npm ci
       - name: Synthesize CDK
-        run: npm run build
+        run: npm run test
