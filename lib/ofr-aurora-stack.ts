@@ -1,7 +1,7 @@
 import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput, Tags } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { getVpcId, getVpcSubnets, LandingZoneAccountType } from "./network";
-import { Vpc, SubnetType } from "aws-cdk-lib/aws-ec2";
+import { Vpc, SubnetType, SecurityGroup, Port } from "aws-cdk-lib/aws-ec2";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import {
   AuroraMysqlEngineVersion,
@@ -40,20 +40,47 @@ export class AuroraStack extends Stack {
       vpcId: getVpcId(props.landingZoneAccountType),
     });
 
-    // Database
-    const databasePasswordSecret = new Secret(this, `${id}-wip-database-password`, {
-      description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
-      generateSecretString: {
-        excludePunctuation: true,
-        excludeCharacters: `!@#$%^&*/"`,
-        includeSpace: false,
-        passwordLength: 32,
-      },
-    });
+    const serverlessSecurityGroup = new SecurityGroup(
+      this,
+      `${id}-serverless-cluster-security-group`,
+      {
+        securityGroupName: `${id}-serverless-cluster-sg`,
+        description: "Aurora Sandbox serverless Aurora cluster access",
+        vpc,
+      }
+    );
 
-    /**
-     * Let's try a serverless cluster from SnapShot, same settings as below:
-     */
+    const provisionedSecurityGroup = new SecurityGroup(
+      this,
+      `${id}-provisioned-cluster-security-group`,
+      {
+        securityGroupName: `${id}-provisioned-cluster-sg`,
+        description: "Aurora Sandbox Provisioned Aurora cluster access",
+        vpc,
+      }
+    );
+
+    // One SG applied to both DBs to facilitate access to each other.
+    const hybridClusterSecurityGroup = new SecurityGroup(
+      this,
+      `${id}-hybrid-cluster-security-group`,
+      {
+        securityGroupName: `${id}-hybrid-cluster-sg`,
+        description: "Aurora Sandbox Hybrid Cluster access",
+        vpc,
+      }
+    );
+
+    const appstreamSecurityGroup = SecurityGroup.fromLookupById(
+      this,
+      "appstream-sg",
+      "sg-0a2604684c21586c1"
+    );
+
+    serverlessSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
+    provisionedSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
+
+    // Database
 
     // const database = new ServerlessCluster(this, `${id}-aurora-serverless`, {
     //   clusterIdentifier: `${id}-aurora-serverless`,
@@ -75,17 +102,36 @@ export class AuroraStack extends Stack {
     //   },
     // });
 
-    const databaseFromSnapshot = new ServerlessClusterFromSnapshot(this, `${id}-snapshot-db`, {
-      clusterIdentifier: `${id}-serverless-snapshot-db`,
-      engine: DatabaseClusterEngine.AURORA_MYSQL, // version: AuroraMysqlEngineVersion.VER_2_11_4
-      snapshotIdentifier:
-        "arn:aws:rds:eu-west-2:651948078005:cluster-snapshot:ofr-admin-sandbox-20240918",
-      vpc: vpc,
-      vpcSubnets: { subnets: isolatedSubnets },
+    /**
+     * Let's try a serverless cluster from SnapShot, same settings as above:
+     */
+
+    const databasePasswordSecret = new Secret(this, `${id}-wip-database-password`, {
+      description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
+      generateSecretString: {
+        excludePunctuation: true,
+        excludeCharacters: `!@#$%^&*/"`,
+        includeSpace: false,
+        passwordLength: 32,
+      },
     });
 
+    const databaseFromSnapshot = new ServerlessClusterFromSnapshot(
+      this,
+      `${id}-serverless-snapshot`,
+      {
+        clusterIdentifier: `${id}-serverless-snapshot`,
+        engine: DatabaseClusterEngine.AURORA_MYSQL, // version: AuroraMysqlEngineVersion.VER_2_11_4
+        snapshotIdentifier:
+          "arn:aws:rds:eu-west-2:651948078005:cluster-snapshot:ofr-admin-sandbox-20240918",
+        vpc,
+        vpcSubnets: { subnets: isolatedSubnets },
+        securityGroups: [serverlessSecurityGroup, hybridClusterSecurityGroup],
+      }
+    );
+
     // New DB Aurora MySQL provisioned instance as Aurora Serverless V1 is going EoL
-    const databaseInstance = new DatabaseCluster(this, `${id}-provisioned-db`, {
+    const databaseProvisonedInstance = new DatabaseCluster(this, `${id}-provisioned-db`, {
       clusterIdentifier: `${id}-provisioned-cluster`,
       engine: DatabaseClusterEngine.auroraMysql({
         version: AuroraMysqlEngineVersion.VER_2_11_4,
@@ -100,6 +146,7 @@ export class AuroraStack extends Stack {
       vpcSubnets: {
         subnets: isolatedSubnets,
       },
+      securityGroups: [provisionedSecurityGroup, hybridClusterSecurityGroup],
       removalPolicy:
         props.landingZoneAccountType === LandingZoneAccountType.PROD
           ? RemovalPolicy.RETAIN
@@ -114,7 +161,7 @@ export class AuroraStack extends Stack {
     });
 
     new CfnOutput(this, `${id} Aurora-Provisioned new instance Endpoint`, {
-      value: databaseInstance.clusterEndpoint.hostname,
+      value: databaseProvisonedInstance.clusterEndpoint.hostname,
     });
 
     new CfnOutput(this, `${id} Aurora-Serverless from snapshot Endpoint`, {

@@ -72,5 +72,9 @@
         ]
       }
     ]
+  },
+  "security-group:account=651948078005:region=eu-west-2:securityGroupId=sg-0a2604684c21586c1": {
+    "securityGroupId": "sg-0a2604684c21586c1",
+    "allowAllOutbound": false
   }
 }
