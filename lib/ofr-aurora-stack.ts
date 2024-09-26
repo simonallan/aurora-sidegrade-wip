@@ -1,18 +1,16 @@
-import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput, Tags } from "aws-cdk-lib";
+import { Stack, StackProps, CfnOutput, Tags } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { getVpcId, getVpcSubnets, LandingZoneAccountType } from "./network";
 import { Vpc, SubnetType, SecurityGroup, Port } from "aws-cdk-lib/aws-ec2";
-import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import {
-  AuroraMysqlEngineVersion,
-  DatabaseCluster,
-  DatabaseClusterEngine,
-  ClusterInstance,
-  CaCertificate,
-  ServerlessClusterFromSnapshot,
+  // DatabaseClusterEngine,
+  // ServerlessClusterFromSnapshot,
+  DatabaseInstance,
+  DatabaseInstanceEngine,
+  DatabaseSecret,
+  MariaDbEngineVersion,
 } from "aws-cdk-lib/aws-rds";
 import { InstanceType, InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
-import { Credentials } from "aws-cdk-lib/aws-rds";
 
 export interface AuroraStackProps extends StackProps {
   readonly landingZoneAccountType: LandingZoneAccountType;
@@ -40,36 +38,28 @@ export class AuroraStack extends Stack {
       vpcId: getVpcId(props.landingZoneAccountType),
     });
 
-    const serverlessSecurityGroup = new SecurityGroup(
-      this,
-      `${id}-serverless-cluster-security-group`,
-      {
-        securityGroupName: `${id}-serverless-cluster-sg`,
-        description: "Aurora Sandbox serverless Aurora cluster access",
-        vpc,
-      }
-    );
+    const sourceSecurityGroup = new SecurityGroup(this, `${id}-source-db-sg`, {
+      securityGroupName: `${id}-source-db-sg`,
+      description: "Aurora Sandbox source database access",
+      vpc,
+    });
 
-    const provisionedSecurityGroup = new SecurityGroup(
-      this,
-      `${id}-provisioned-cluster-security-group`,
-      {
-        securityGroupName: `${id}-provisioned-cluster-sg`,
-        description: "Aurora Sandbox Provisioned Aurora cluster access",
-        vpc,
-      }
-    );
+    const targetSecurityGroup = new SecurityGroup(this, `${id}-target-db-sg`, {
+      securityGroupName: `${id}-target-db-sg`,
+      description: "Aurora Sandbox target database access",
+      vpc,
+    });
 
-    // One SG applied to both DBs to facilitate access to each other.
-    const hybridClusterSecurityGroup = new SecurityGroup(
-      this,
-      `${id}-hybrid-cluster-security-group`,
-      {
-        securityGroupName: `${id}-hybrid-cluster-sg`,
-        description: "Aurora Sandbox Hybrid Cluster access",
-        vpc,
-      }
-    );
+    // // One SG applied to both DBs to facilitate access to each other.
+    // const hybridClusterSecurityGroup = new SecurityGroup(
+    //   this,
+    //   `${id}-hybrid-cluster-security-group`,
+    //   {
+    //     securityGroupName: `${id}-hybrid-cluster-sg`,
+    //     description: "Aurora Sandbox Hybrid Cluster access",
+    //     vpc,
+    //   }
+    // );
 
     const appstreamSecurityGroup = SecurityGroup.fromLookupById(
       this,
@@ -77,95 +67,64 @@ export class AuroraStack extends Stack {
       "sg-0a2604684c21586c1"
     );
 
-    serverlessSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
-    provisionedSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
+    // AppStream RDS Client access to both Databases
+    sourceSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
+    targetSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
 
-    // Database
-
-    // const database = new ServerlessCluster(this, `${id}-aurora-serverless`, {
-    //   clusterIdentifier: `${id}-aurora-serverless`,
-    //   engine: DatabaseClusterEngine.auroraMysql({
-    //     version: AuroraMysqlEngineVersion.VER_2_11_4,
-    //   }),
-    //   vpc,
-    //   vpcSubnets: {
-    //     subnets: isolatedSubnets,
-    //   },
-    //   credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
-    //   defaultDatabaseName: "aurora-wip",
-    //   removalPolicy: props.landingZoneAccountType === "integration" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
-    //   backupRetention: Duration.days(3),
-    //   scaling: {
-    //     minCapacity: AuroraCapacityUnit.ACU_1,
-    //     maxCapacity: AuroraCapacityUnit.ACU_2,
-    //     autoPause: Duration.minutes(60),
+    // const targetDatabaseCredentials = new Secret(this, `${id}-database-credentials`, {
+    //   description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
+    //   generateSecretString: {
+    //     excludePunctuation: true,
+    //     excludeCharacters: `!@#$%^&*/"`,
+    //     includeSpace: false,
+    //     passwordLength: 32,
     //   },
     // });
 
-    /**
-     * Let's try a serverless cluster from SnapShot, same settings as above:
-     */
-
-    const databasePasswordSecret = new Secret(this, `${id}-wip-database-password`, {
-      description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
-      generateSecretString: {
-        excludePunctuation: true,
-        excludeCharacters: `!@#$%^&*/"`,
-        includeSpace: false,
-        passwordLength: 32,
-      },
-    });
-
-    const databaseFromSnapshot = new ServerlessClusterFromSnapshot(
+    const targetDatabaseCredentials = new DatabaseSecret(
       this,
-      `${id}-serverless-snapshot`,
+      `${id}-target-database-credentials`,
       {
-        clusterIdentifier: `${id}-serverless-snapshot`,
-        engine: DatabaseClusterEngine.AURORA_MYSQL, // version: AuroraMysqlEngineVersion.VER_2_11_4
-        snapshotIdentifier:
-          "arn:aws:rds:eu-west-2:651948078005:cluster-snapshot:ofr-admin-sandbox-20240918",
-        vpc,
-        vpcSubnets: { subnets: isolatedSubnets },
-        securityGroups: [serverlessSecurityGroup, hybridClusterSecurityGroup],
+        username: "drupal",
       }
     );
 
-    // New DB Aurora MySQL provisioned instance as Aurora Serverless V1 is going EoL
-    const databaseProvisonedInstance = new DatabaseCluster(this, `${id}-provisioned-db`, {
-      clusterIdentifier: `${id}-provisioned-cluster`,
-      engine: DatabaseClusterEngine.auroraMysql({
-        version: AuroraMysqlEngineVersion.VER_2_11_4,
-      }),
-      writer: ClusterInstance.provisioned(`${id}-writer`, {
-        instanceIdentifier: `${id}-writer`,
-        caCertificate: CaCertificate.RDS_CA_RSA2048_G1,
-        instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.SMALL),
-      }),
-      credentials: Credentials.fromPassword("drupal", databasePasswordSecret.secretValue),
+    // // Source Database: serverless cluster from SnapShot
+    // const sourceDatabase = new ServerlessClusterFromSnapshot(this, `${id}-source-db-cluster`, {
+    //   clusterIdentifier: `${id}-source`,
+    //   engine: DatabaseClusterEngine.AURORA_MYSQL, // current engine: AuroraMysqlEngineVersion.VER_2_11_4
+    //   snapshotIdentifier:
+    //     "arn:aws:rds:eu-west-2:651948078005:cluster-snapshot:ofr-admin-sandbox-20240918",
+    //   vpc,
+    //   vpcSubnets: { subnets: isolatedSubnets },
+    //   securityGroups: [sourceSecurityGroup],
+    // });
+
+    // Target Database: Maria DB version 10.4, then 10.5 then 10.11
+    const targetDatabase = new DatabaseInstance(this, `${id}-target-db-instance`, {
+      instanceIdentifier: `${id}-target`,
+      instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.SMALL),
+      engine: DatabaseInstanceEngine.mariaDb({ version: MariaDbEngineVersion.VER_10_4_33 }),
+      databaseName: "cruk_fundraising",
+      credentials: { username: "drupal" },
+      securityGroups: [targetSecurityGroup],
       vpc,
       vpcSubnets: {
         subnets: isolatedSubnets,
       },
-      securityGroups: [provisionedSecurityGroup, hybridClusterSecurityGroup],
-      removalPolicy:
-        props.landingZoneAccountType === LandingZoneAccountType.PROD
-          ? RemovalPolicy.RETAIN
-          : RemovalPolicy.DESTROY,
-      backup: {
-        retention:
-          props.landingZoneAccountType === LandingZoneAccountType.PROD
-            ? Duration.days(30)
-            : Duration.days(1),
-        preferredWindow: "04:30-05:00",
-      },
+      multiAz: true,
     });
 
-    new CfnOutput(this, `${id} Aurora-Provisioned new instance Endpoint`, {
-      value: databaseProvisonedInstance.clusterEndpoint.hostname,
+    // new CfnOutput(this, "sourceDatabaseEndpoint", {
+    //   value: sourceDatabase.clusterEndpoint.hostname,
+    // });
+
+    new CfnOutput(this, "targetDatabaseEndpoint", {
+      value: targetDatabase.instanceEndpoint.hostname,
     });
 
-    new CfnOutput(this, `${id} Aurora-Serverless from snapshot Endpoint`, {
-      value: databaseFromSnapshot.clusterEndpoint.hostname,
+    new CfnOutput(this, `targettargetDatabaseCredentials`, {
+      value: targetDatabaseCredentials.secretName,
     });
   }
 }
