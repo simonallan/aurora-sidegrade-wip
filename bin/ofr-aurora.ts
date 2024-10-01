@@ -31,8 +31,8 @@ const auroraProps = {
     "Cost-Centre": "TC7003",
     "Sub-Project-Code": "SO00002-0000",
     "Support-Level": "0",
-    Name: `Stack: wip-dbmigration-${landingZoneAccountType}`,
-    id: `wip-dbmigration-${landingZoneAccountType}`,
+    Name: `Stack: wip-db-migration-${landingZoneAccountType}`,
+    id: `wip-db-migration-${landingZoneAccountType}`,
   },
 };
 

@@ -9,6 +9,7 @@ import {
   DatabaseInstanceEngine,
   DatabaseSecret,
   MariaDbEngineVersion,
+  ParameterGroup,
 } from "aws-cdk-lib/aws-rds";
 import { InstanceType, InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
 
@@ -50,17 +51,6 @@ export class AuroraStack extends Stack {
       vpc,
     });
 
-    // // One SG applied to both DBs to facilitate access to each other.
-    // const hybridClusterSecurityGroup = new SecurityGroup(
-    //   this,
-    //   `${id}-hybrid-cluster-security-group`,
-    //   {
-    //     securityGroupName: `${id}-hybrid-cluster-sg`,
-    //     description: "Aurora Sandbox Hybrid Cluster access",
-    //     vpc,
-    //   }
-    // );
-
     const appstreamSecurityGroup = SecurityGroup.fromLookupById(
       this,
       "appstream-sg",
@@ -70,16 +60,6 @@ export class AuroraStack extends Stack {
     // AppStream RDS Client access to both Databases
     sourceSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
     targetSecurityGroup.connections.allowFrom(appstreamSecurityGroup, Port.tcp(3306));
-
-    // const targetDatabaseCredentials = new Secret(this, `${id}-database-credentials`, {
-    //   description: `WIP :: Aurora :: ${props.landingZoneAccountType} :: Database password`,
-    //   generateSecretString: {
-    //     excludePunctuation: true,
-    //     excludeCharacters: `!@#$%^&*/"`,
-    //     includeSpace: false,
-    //     passwordLength: 32,
-    //   },
-    // });
 
     const targetDatabaseCredentials = new DatabaseSecret(
       this,
@@ -100,11 +80,24 @@ export class AuroraStack extends Stack {
     //   securityGroups: [sourceSecurityGroup],
     // });
 
-    // Target Database: Maria DB version 10.4, then 10.5 then 10.11
+    // // Target Database: Maria DB version 10.4, then 10.5 then 10.11
+    // const parameterGroup_10_4 = new ParameterGroup(this, `${id}-mariadb-10-4`, {
+    //   // Only the major version needs to be pinned here.
+    //   engine: DatabaseInstanceEngine.mariaDb({ version: MariaDbEngineVersion.VER_10_4 }),
+    //   name: `${id}-mariadb-10-4`,
+    // });
+
+    const parameterGroupDefault = ParameterGroup.fromParameterGroupName(
+      this,
+      `${id}-parameter-group-default`,
+      "default.mariadb10.4"
+    );
+
     const targetDatabase = new DatabaseInstance(this, `${id}-target-db-instance`, {
       instanceIdentifier: `${id}-target`,
       instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.SMALL),
-      engine: DatabaseInstanceEngine.mariaDb({ version: MariaDbEngineVersion.VER_10_4_33 }),
+      // engine: DatabaseInstanceEngine.mariaDb({ version: MariaDbEngineVersion.VER_10_4_33 }),
+      engine: DatabaseInstanceEngine.mariaDb({ version: MariaDbEngineVersion.VER_10_6 }),
       databaseName: "cruk_fundraising",
       credentials: { username: "drupal" },
       securityGroups: [targetSecurityGroup],
@@ -113,6 +106,8 @@ export class AuroraStack extends Stack {
         subnets: isolatedSubnets,
       },
       multiAz: true,
+      parameterGroup: parameterGroupDefault,
+      allowMajorVersionUpgrade: true,
     });
 
     // new CfnOutput(this, "sourceDatabaseEndpoint", {
