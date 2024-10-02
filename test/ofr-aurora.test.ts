@@ -11,12 +11,12 @@ const env = {
 const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.DEV;
 
 const mockAuroraProps = {
-  description: "Aurora :: WIP :: DB Sidegrade",
+  description: "Aurora :: Sandbox :: DB Sidegrade",
   env,
   landingZoneAccountType,
   terminationProtection: false,
   tags: {
-    Product: "Online Fundraising",
+    Product: "Online Fundraising Sandbox",
     Environment: landingZoneAccountType,
     "Cost-Centre": "TC7003",
     "Sub-Project-Code": "SO00002-0000",
@@ -31,7 +31,7 @@ test("CDK stacks synthesized successfully", () => {
   // GIVEN
   const app = new App();
 
-  const mockStack = new AuroraStack(app, "mock-aurora-sandbox-stack", mockAuroraProps);
+  const mockStack = new AuroraStack(app, "mock-sandbox-stack", mockAuroraProps);
 
   // THEN
   const template = Template.fromStack(mockStack);
