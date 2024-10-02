@@ -2917,4 +2917,3 @@ Executing command: select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS
 | int        |
 | smallint   |
 +------------+
-
