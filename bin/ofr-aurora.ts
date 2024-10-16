@@ -4,7 +4,7 @@ import { App, Aws } from "aws-cdk-lib";
 import { AuroraStack } from "../lib/ofr-aurora-stack";
 import { LandingZoneAccountType } from "../lib/network";
 
-const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.DEV;
+const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.INT;
 
 const app = new App();
 
@@ -21,19 +21,19 @@ if (!["651948078005"].includes(env.account)) {
 }
 
 const auroraProps = {
-  description: "Aurora :: Sandbox :: DB Sidegrade",
+  description: "Aurora :: DB Migration",
   terminationProtection: false,
   env,
   landingZoneAccountType,
   tags: {
-    Product: "Online Fundraising Sandbox",
+    Product: "Online Fundraising",
     Environment: landingZoneAccountType,
     "Cost-Centre": "TC7003",
     "Sub-Project-Code": "SO00002-0000",
     "Support-Level": "0",
-    Name: `Stack: wip-db-migration-${landingZoneAccountType}`,
-    id: `wip-db-migration-${landingZoneAccountType}`,
+    Name: `Stack: db-migration-${landingZoneAccountType}`,
+    id: `db-migration-${landingZoneAccountType}`,
   },
 };
 
-new AuroraStack(app, `wip-aurora-${landingZoneAccountType}`, auroraProps);
+new AuroraStack(app, `aurora-${landingZoneAccountType}`, auroraProps);
