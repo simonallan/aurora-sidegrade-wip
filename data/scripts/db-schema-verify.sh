@@ -2,7 +2,8 @@
 
 declare -a dbendpoints=(
   # wip-aurora-sandbox-target.cijbd5cnppmo.eu-west-2.rds.amazonaws.com
-  ofr-admin-application-integration-mariadb.cijbd5cnppmo.eu-west-2.rds.amazonaws.com
+  # ofr-admin-application-integration-mariadb.cijbd5cnppmo.eu-west-2.rds.amazonaws.com
+  ofr-admin-application-production.cluster-cwdv9vks4lal.eu-west-2.rds.amazonaws.com
 )
 
 declare -a statusCommands=(

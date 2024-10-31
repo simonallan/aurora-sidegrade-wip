@@ -1,6 +1,7 @@
 # Simple script for DB Backups
 
-dbendpoint="ofr-admin-application-integration.cluster-cijbd5cnppmo.eu-west-2.rds.amazonaws.com"
+# dbendpoint="ofr-admin-application-integration.cluster-cijbd5cnppmo.eu-west-2.rds.amazonaws.com"
+dbendpoint="ofr-admin-application-production.cluster-cwdv9vks4lal.eu-west-2.rds.amazonaws.com" # Migration candidate
 dbname="cruk_fundraising"
 
 hostId=$(echo "$dbendpoint" | cut -d'.' -f1)
