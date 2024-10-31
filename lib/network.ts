@@ -132,7 +132,7 @@ export const sshToJumpBoxHosts: IpsAndDescriptions = {
  * SubnetType for requesting an array of subnets for specific purposes.
  */
 export enum LandingZoneAccountType {
-  DEV = "sandbox",
+  // DEV = "sandbox",
   INT = "integration",
   PROD = "production",
 }

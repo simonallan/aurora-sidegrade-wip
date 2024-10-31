@@ -8,7 +8,7 @@ const env = {
   region: "eu-west-0",
 };
 
-const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.DEV;
+const landingZoneAccountType: LandingZoneAccountType = LandingZoneAccountType.INT;
 
 const mockAuroraProps = {
   description: "Aurora :: Sandbox :: DB Sidegrade",

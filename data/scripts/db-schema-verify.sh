@@ -1,17 +1,21 @@
 #!/bin/bash
 
 declare -a dbendpoints=(
-  # wip-aurora-sandbox-target
-  wip-aurora-sandbox-source.cluster-cijbd5cnppmo.eu-west-2.rds.amazonaws.com
   # wip-aurora-sandbox-target.cijbd5cnppmo.eu-west-2.rds.amazonaws.com
+  # ofr-admin-application-integration-mariadb.cijbd5cnppmo.eu-west-2.rds.amazonaws.com
+  ofr-admin-application-production.cluster-cwdv9vks4lal.eu-west-2.rds.amazonaws.com
 )
 
 declare -a statusCommands=(
     "STATUS;"
     "SELECT version();"
+    "SHOW DATABASES;"
     "SELECT TABLE_NAME AS 'Table', ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024 ,2) AS 'Size (MB)' FROM information_schema.TABLES WHERE TABLE_SCHEMA ='cruk_fundraising' ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC LIMIT 10;"
     "select DISTINCT(DATA_TYPE) from INFORMATION_SCHEMA.COLUMNS"
-    "select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS"
+    "SELECT * FROM cruk_fundraising.url_alias LIMIT 10;"
+    "SELECT * FROM cruk_fundraising.file_managed LIMIT 10;"
+    "SELECT * FROM cruk_fundraising.users_roles LIMIT 10;"
+    # "select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS"
 )
 
 homeDir="/home/as2-streaming-user/MyFiles/"
